@@ -13,6 +13,7 @@ Notable changes to the `alacritty_terminal` crate are documented in its
 ### Added
 
 - Vi motions `*`, `#`, `{`, and `}`
+- Scrollbar (enable via config `scrollbar.mode`)
 
 ### Changed
 
