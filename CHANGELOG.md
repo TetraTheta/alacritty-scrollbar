@@ -18,6 +18,7 @@ Notable changes to the `alacritty_terminal` crate are documented in its
 
 - Vi motions `*`, `#`, `{`, and `}`
 - Scrollbar (enable via config `scrollbar.mode`)
+- IPC config retrieval using `alacritty msg get-config`
 
 ### Changed
 
