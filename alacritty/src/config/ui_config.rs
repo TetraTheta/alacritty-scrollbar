@@ -14,11 +14,10 @@ use winit::keyboard::{Key, ModifiersState};
 
 use alacritty_config::SerdeReplace;
 use alacritty_config_derive::{ConfigDeserialize, SerdeReplace};
-use alacritty_terminal::term::Config as TermConfig;
 use alacritty_terminal::term::search::RegexSearch;
+use alacritty_terminal::term::Config as TermConfig;
 use alacritty_terminal::tty::{Options as PtyOptions, Shell};
 
-use crate::config::LOG_TARGET_CONFIG;
 use crate::config::bell::BellConfig;
 use crate::config::bindings::{
     self, Action, Binding, BindingKey, KeyBinding, KeyLocation, ModeWrapper, ModsWrapper,
@@ -34,6 +33,8 @@ use crate::config::scrolling::Scrolling;
 use crate::config::selection::Selection;
 use crate::config::terminal::Terminal;
 use crate::config::window::WindowConfig;
+use crate::config::LOG_TARGET_CONFIG;
+use crate::display::color::Rgb;
 
 /// Regex used for the default URL hint.
 #[rustfmt::skip]
@@ -92,6 +93,8 @@ pub struct UiConfig {
     /// Path to a shell program to run on startup.
     #[config(deprecated = "use terminal.shell instead")]
     shell: Option<Program>,
+
+    pub scrollbar: Scrollbar,
 
     /// Configuration file imports.
     ///
@@ -225,6 +228,35 @@ where
     bindings.extend(default);
 
     Ok(bindings)
+}
+
+#[derive(ConfigDeserialize, Serialize, Clone, Debug, PartialEq)]
+pub struct Scrollbar {
+    pub mode: ScrollbarMode,
+    pub color: Rgb,
+    /// Scrollbar opacity from 0.0 (invisible) to 1.0 (opaque).
+    pub opacity: Percentage,
+    /// Time (in milliseconds) the scrollbar fading takes.
+    pub duration: u32,
+}
+
+impl Default for Scrollbar {
+    fn default() -> Self {
+        Scrollbar {
+            mode: Default::default(),
+            color: Rgb::new(0x7f, 0x7f, 0x7f),
+            opacity: Percentage::new(0.5),
+            duration: 2000,
+        }
+    }
+}
+
+#[derive(ConfigDeserialize, Serialize, Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ScrollbarMode {
+    #[default]
+    Never,
+    Fading,
+    Always,
 }
 
 /// A delta for a point in a 2 dimensional plane.
