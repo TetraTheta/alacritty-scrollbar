@@ -1,0 +1,75 @@
+name: Build Alacritty
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: false
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            artifact: Alacritty-windows
+            path: Alacritty-windows.zip
+          - name: linux
+            os: ubuntu-latest
+            artifact: Alacritty-linux
+            path: Alacritty-linux.tar.gz
+          - name: macos
+            os: macos-latest
+            artifact: Alacritty-macos
+            path: Alacritty-macos.dmg
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Install Linux dependencies
+        if: matrix.name == 'linux'
+        run: |
+          sudo apt update
+          sudo apt install -y cmake pkg-config libfreetype6-dev libfontconfig1-dev \
+            libxcb-xfixes0-dev libxkbcommon-dev python3 scdoc
+
+      - name: Install macOS dependencies
+        if: matrix.name == 'macos'
+        run: |
+          brew install scdoc
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - name: Build Windows
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          cargo build --release
+          Compress-Archive -Path target/release/alacritty.exe -DestinationPath ${{ matrix.path }}
+
+      - name: Build Linux
+        if: matrix.name == 'linux'
+        run: |
+          cargo build --release
+          tar -czf "${{ matrix.path }}" -C target/release alacritty
+
+      - name: Build macOS
+        if: matrix.name == 'macos'
+        run: |
+          make dmg-universal
+          mv target/release/osx/Alacritty.dmg "${{ matrix.path }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
+          if-no-files-found: error
